@@ -1,0 +1,42 @@
+{
+    "env": {
+        "defaultIncludePath": [
+            "${env:MinGW_PATH}/include/**",
+            "${env:IDF_PATH}/components/**",
+            "${workspaceFolder}/main/**",
+            "${workspaceFolder}/components/**",
+            "${workspaceFolder}/build/config/*",
+            "${env:IDF_PATH}/examples/common_components/protocol_examples_common/**"
+        ],
+        "defaultBrowsePath": [
+            "${env:MinGW_PATH}/include/**",
+            "${env:MinGW_PATH}/lib/**",
+            "${env:MinGW_PATH}/bin/**",
+            "${env:IDF_PATH}/components",
+            "${workspaceFolder}/main",
+            "${workspaceFolder}/components",
+            "${workspaceFolder}/build/config",
+            "${env:IDF_PATH}/examples/common_components/protocol_examples_common"
+        ]
+    },
+    "configurations": [
+        {
+            "name": "ESP32",
+            "includePath": [
+                "${defaultIncludePath}"
+            ],
+            "browse": {
+                "path": [
+                    "${defaultBrowsePath}"
+                ],
+                "limitSymbolsToIncludedHeaders": false
+            },
+            "compilerPath": "${IDF_TOOLS_PATH}\\tools\\xtensa-esp-elf\\esp-13.2.0_20240530\\xtensa-esp-elf\\bin\\xtensa-esp32-elf-gcc.exe",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+            "intelliSenseMode": "gcc-x64"
+        }
+    ],
+    "version": 4
+}
