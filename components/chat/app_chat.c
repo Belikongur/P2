@@ -9,8 +9,6 @@
 
 #include "lownet.h"
 #include "serial_io.h"
-#include "utility.h"
-int util_printable(char c);
 
 void chat_receive(const lownet_frame_t *frame) {
     if (frame->destination == lownet_get_device_id()) {
@@ -23,16 +21,6 @@ void chat_receive(const lownet_frame_t *frame) {
 }
 
 void chat_shout(const char *message) {
-    for (int i = 0; i < strlen(message); i++) {
-        if (util_printable(message[i]) == 0) {
-            int size = snprintf(NULL, 0, "Invalid character: %c", message[i]);
-            char unprintable[size + 1];
-            snprintf(unprintable, size + 1, "Invalid character: %c", message[i]);
-            unprintable[size + 1] = '\0';
-            serial_write_line(unprintable);
-            return;
-        }
-    }
     lownet_frame_t frame;
     frame.protocol = LOWNET_PROTOCOL_CHAT;
     frame.destination = 0xFF;
@@ -42,16 +30,6 @@ void chat_shout(const char *message) {
 }
 
 void chat_tell(const char *message, uint8_t destination) {
-    for (int i = 0; i < strlen(message); i++) {
-        if (util_printable(message[i]) == 0) {
-            int size = snprintf(NULL, 0, "Invalid character: %c", message[i]);
-            char unprintable[size + 1];
-            snprintf(unprintable, size + 1, "Invalid character: %c", message[i]);
-            unprintable[size + 1] = '\0';
-            serial_write_line(unprintable);
-            return;
-        }
-    }
     lownet_frame_t frame;
     frame.protocol = LOWNET_PROTOCOL_CHAT;
     frame.destination = destination;

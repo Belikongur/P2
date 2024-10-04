@@ -87,6 +87,7 @@ void svc_serial(void* pvTaskParams) {
             // in this case).
             printf(msg_buffer);
             fflush(stdout);
+            serial_write_prompt();
 
             memset(out_msg, 0, MSG_BUFFER_LENGTH);
         }
@@ -97,7 +98,7 @@ void svc_serial(void* pvTaskParams) {
 
             // If the result is EOF, then there was nothing there (yet).  In this
             // circumstance, sleep a while before checking again.
-            if (next == EOF) {
+            if (next == EOF || ((char)next == '\b' && !at)) {
                 vTaskDelay(service_delay);
                 continue;
             }
@@ -106,11 +107,13 @@ void svc_serial(void* pvTaskParams) {
                 // Terminating newline character found.
                 done = 1;
             } else if (at < (MSG_BUFFER_LENGTH - 1)) {
-                in_msg[at++] = (char)next;
+                // Remove char from stdout if \b else add char to stdout
                 if ((char)next == '\b' && at > 0) {
                     printf("\b \b");
                     fflush(stdout);
+                    in_msg[--at] = '\0';
                 } else {
+                    in_msg[at++] = (char)next;
                     printf("%c", next);
                     fflush(stdout);
                 }
@@ -159,6 +162,7 @@ int serial_read_line(char* buffer) {
     }
 
     if (xQueueReceive(serial_system.queue_read, buffer, timeout_read) == pdTRUE) {
+        printf("\n");
         return 0;
     }
 
@@ -166,6 +170,7 @@ int serial_read_line(char* buffer) {
     return -1;
 }
 
+// Shows prompt and written command
 void serial_write_prompt() {
     printf(PROMPT_TOKEN);
     fflush(stdout);

@@ -11,6 +11,7 @@
 #include "utility.h"
 
 int util_printable(char c);
+uint32_t hex_to_dec(const char *hex_digits);
 const char *ERROR_OVERRUN = "ERROR // INPUT OVERRUN";
 const char *ERROR_UNKNOWN = "ERROR // PROCESSING FAILURE";
 const char *ERROR_COMMAND = "Command error";
@@ -34,6 +35,13 @@ void app_frame_dispatch(const lownet_frame_t *frame) {
     }
 }
 
+int acceptable(char *message) {
+    for (int i = 0; i < strlen(message); i++) {
+        if (util_printable(message[i]) == 0) return 0;
+    }
+    return 1;
+}
+
 void app_main(void) {
     char msg_in[MSG_BUFFER_LENGTH];
     char msg_out[MSG_BUFFER_LENGTH];
@@ -53,49 +61,45 @@ void app_main(void) {
             // Quick & dirty input parse.  Presume input length > 0.
             if (msg_in[0] == '/') {
                 if (strncmp(msg_in, "/ping", 5) == 0 && strlen(msg_in) >= 10) {
-                    char node[5];
-                    memcpy(node, &msg_in[6], sizeof(char) * 4);
-                    node[4] = '\0';
+                    char hex[4];
+                    memcpy(hex, &msg_in[6], sizeof(char) * 4);
+                    uint8_t node = (uint8_t)strtol(hex, NULL, 16);
+                    ping(node);
 
-                    serial_write_line(node);
-                    ping((uint8_t)strtol(node, NULL, 16));
-
+                    snprintf(msg_out, MSG_BUFFER_LENGTH, "Pinging %02X", node);
+                    serial_write_line(msg_out);
                 } else if (strcmp(msg_in, "/date") == 0) {
                     lownet_time_t curr_time = lownet_get_time();
                     if (!curr_time.parts && !curr_time.seconds) {
-                        serial_write_line("Network time is not available\n");
+                        serial_write_line("Network time is not available");
                     } else {
-                        int size = snprintf(NULL, 0, "%ld.%d sec since the course started.", curr_time.seconds, curr_time.parts);
-                        char date[size];
-                        snprintf(date, size, "%ld.%d sec since the course started.", curr_time.seconds, curr_time.parts);
-                        serial_write_line(date);
+                        snprintf(msg_out, MSG_BUFFER_LENGTH, "%ld.%d sec since the course started.", curr_time.seconds, curr_time.parts);
+                        serial_write_line(msg_out);
                     }
                 } else {
                     serial_write_line(ERROR_COMMAND);
                 }
-            } else if (msg_in[0] == '@' && strlen(msg_in) >= 7) {
-                if (strcmp(msg_in, "@0xFF") == 0) {
-                    size_t len = strlen(msg_in) - 6;
-                    char message[len + 1];
-                    memcpy(message, &msg_in[6], len);
-                    message[len] = '\0';
-                    chat_shout(message);
+            } else if (msg_in[0] == '@') {
+                char hex[4];
+                memcpy(hex, &msg_in[1], 4 * sizeof(char));
+                uint8_t node = (uint8_t)strtol(hex, NULL, 16);
+                if (acceptable(&msg_in[6])) {
+                    chat_tell(&msg_in[6], node);
                 } else {
-                    char dest[5];
-                    memcpy(dest, &msg_in[1], 4 * sizeof(char));
-                    dest[4] = '\0';
-                    uint8_t node = (uint8_t)strtol(dest, NULL, 16);
-
-                    size_t len = strlen(msg_in) - 6;
-                    char message[len + 1];
-                    memcpy(message, &msg_in[6], len);
-                    message[len] = '\0';
-                    chat_tell(message, node);
+                    serial_write_line(ERROR_ARGUMENT);
                 }
+
+                printf(&msg_in[6]);
+                snprintf(msg_out, MSG_BUFFER_LENGTH, " sent to %02X", node);
+                serial_write_line(msg_out);
             } else {
-                // Default, chat broadcast message.
-                //	...?
-                chat_shout(msg_in);
+                if (acceptable(msg_in)) {
+                    chat_shout(msg_in);
+                    printf("Broadcasted message: ");
+                    serial_write_line(msg_in);
+                } else {
+                    serial_write_line(ERROR_ARGUMENT);
+                }
             }
         }
     }
