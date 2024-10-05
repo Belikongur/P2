@@ -142,7 +142,6 @@ void lownet_send(const lownet_frame_t* frame) {
     if (esp_now_send(net_system.broadcast.mac, (const uint8_t*)&out_frame, sizeof(out_frame)) != ESP_OK) {
         ESP_LOGE(TAG, "LowNet Frame send error");
     }
-    // dump_frame(&out_frame);
 }
 
 // Formats and returns a lownet time structure based on synced network time.
@@ -299,22 +298,4 @@ void lownet_sync_time(const lownet_frame_t* time_frame) {
 
     memcpy(&net_system.sync_time, time_frame->payload, sizeof(lownet_time_t));
     net_system.sync_stamp = (esp_timer_get_time() / 1000);
-}
-
-void dump_frame(const lownet_frame_t* frame) {
-    printf("Frame Dump:\n");
-    printf("Magic: %02X %02X\n", frame->magic[0], frame->magic[1]);
-    printf("Source: %02X\n", frame->source);
-    printf("Destination: %02X\n", frame->destination);
-    printf("Protocol: %02X\n", frame->protocol);
-    printf("Length: %02X\n", frame->length);
-    printf("Padding: %02X %02X\n", frame->padding[0], frame->padding[1]);
-
-    printf("Payload: ");
-    for (size_t i = 0; i < frame->length; i++) {
-        printf("%02X ", frame->payload[i]);
-    }
-    printf("\n");
-
-    printf("CRC: %08lX\n", frame->crc);
 }

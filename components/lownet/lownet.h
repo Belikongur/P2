@@ -36,7 +36,6 @@ typedef void (*lownet_recv_fn)(const lownet_frame_t* frame);
 
 void lownet_init(lownet_recv_fn receive_cb);
 void lownet_send(const lownet_frame_t* frame);
-void dump_frame(const lownet_frame_t* frame);
 
 lownet_time_t lownet_get_time();
 uint8_t lownet_get_device_id();

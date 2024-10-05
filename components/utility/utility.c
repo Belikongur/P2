@@ -4,7 +4,7 @@
 #include <string.h>
 
 int util_printable(char c) {
-    return ((c >= ' ' && c < 127) || c == '\b') ? 1 : 0;
+    return ((c >= ' ' && c < 127) ? 1 : 0);
 }
 
 uint32_t hex_to_dec(const char *hex_digits) {
