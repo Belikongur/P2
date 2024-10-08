@@ -10,14 +10,13 @@
 #include "serial_io.h"
 #include "utility.h"
 
-int util_printable(char c);
-uint32_t hex_to_dec(const char *hex_digits);
-const char *ERROR_OVERRUN = "ERROR // INPUT OVERRUN";
-const char *ERROR_UNKNOWN = "ERROR // PROCESSING FAILURE";
-const char *ERROR_COMMAND = "Command error";
-const char *ERROR_ARGUMENT = "Argument error";
+const char* ERROR_OVERRUN = "ERROR // INPUT OVERRUN";
+const char* ERROR_UNKNOWN = "ERROR // PROCESSING FAILURE";
 
-void app_frame_dispatch(const lownet_frame_t *frame) {
+const char* ERROR_COMMAND = "Command error";
+const char* ERROR_ARGUMENT = "Argument error";
+
+void app_frame_dispatch(const lownet_frame_t* frame) {
     switch (frame->protocol) {
         case LOWNET_PROTOCOL_RESERVE:
             // Invalid protocol, ignore.
@@ -35,12 +34,12 @@ void app_frame_dispatch(const lownet_frame_t *frame) {
     }
 }
 
-int acceptable(char *message) {
-    for (int i = 0; i < strlen(message); i++) {
-        if (util_printable(message[i]) == 0) return 0;
-    }
-    return 1;
-}
+// int acceptable(char *message) {
+//     for (int i = 0; i < strlen(message); i++) {
+//         if (util_printable(message[i]) == 0) return 0;
+//     }
+//     return 1;
+// }
 
 void app_main(void) {
     char msg_in[MSG_BUFFER_LENGTH];
@@ -52,7 +51,7 @@ void app_main(void) {
     // Initialize the LowNet services.
     lownet_init(app_frame_dispatch);
 
-    serial_write_prompt();
+    // serial_write_prompt();
     while (true) {
         memset(msg_in, 0, MSG_BUFFER_LENGTH);
         memset(msg_out, 0, MSG_BUFFER_LENGTH);
@@ -76,30 +75,20 @@ void app_main(void) {
                         snprintf(msg_out, MSG_BUFFER_LENGTH, "%ld.%d sec since the course started.", curr_time.seconds, curr_time.parts);
                         serial_write_line(msg_out);
                     }
-                } else {
-                    serial_write_line(ERROR_COMMAND);
                 }
             } else if (msg_in[0] == '@') {
                 char hex[4];
                 memcpy(hex, &msg_in[1], 4 * sizeof(char));
                 uint8_t node = (uint8_t)strtol(hex, NULL, 16);
-                if (acceptable(&msg_in[6])) {
-                    chat_tell(&msg_in[6], node);
-                } else {
-                    serial_write_line(ERROR_ARGUMENT);
-                }
+                chat_tell(&msg_in[6], node);
 
-                printf(&msg_in[6]);
-                snprintf(msg_out, MSG_BUFFER_LENGTH, " sent to %02X", node);
+                // printf(&msg_in[6]);
+                snprintf(msg_out, MSG_BUFFER_LENGTH, "message sent to %02X", node);
                 serial_write_line(msg_out);
             } else {
-                if (acceptable(msg_in)) {
-                    chat_shout(msg_in);
-                    printf("Broadcasted message: ");
-                    serial_write_line(msg_in);
-                } else {
-                    serial_write_line(ERROR_ARGUMENT);
-                }
+                chat_shout(msg_in);
+                snprintf(msg_out, MSG_BUFFER_LENGTH, "Broadcasted message");
+                serial_write_line(msg_out);
             }
         }
     }

@@ -15,13 +15,11 @@ void chat_receive(const lownet_frame_t *frame) {
         uint8_t msg_len = frame->length;
         char message[msg_len];
         memcpy(message, frame->payload, msg_len);
-        printf("sent to %02X: ", frame->destination);
         serial_write_line(message);
     } else {
         uint8_t msg_len = frame->length;
         char message[msg_len];
         memcpy(message, frame->payload, msg_len);
-        printf("Broadcasted from %02X: ", frame->source);
         serial_write_line(message);
     }
 }

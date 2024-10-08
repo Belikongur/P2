@@ -2,6 +2,7 @@
 #define GUARD_LOWNET_H
 
 #include <stdint.h>
+
 #define LOWNET_SERVICE_CORE 1
 #define LOWNET_SERVICE_PRIO 10
 typedef enum : uint8_t {

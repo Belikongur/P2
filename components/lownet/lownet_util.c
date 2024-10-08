@@ -1,10 +1,6 @@
 #include "lownet_util.h"
 
 #include <stddef.h>
-#include <stdio.h>
-#include <string.h>
-
-#include "serial_io.h"
 
 static const lownet_identifier_t device_table[] =
     {
@@ -110,80 +106,80 @@ uint32_t lownet_crc(const lownet_frame_t* frame) {
     return reg;
 }
 
-void dump_frame(const lownet_frame_t* frame) {
-    printf("Frame Dump:\n");
-    printf("Magic: %02X %02X\n", frame->magic[0], frame->magic[1]);
-    printf("Source: %02X\n", frame->source);
-    printf("Destination: %02X\n", frame->destination);
-    printf("Protocol: %02X\n", frame->protocol);
-    printf("Length: %02X\n", frame->length);
-    printf("Padding: %02X %02X\n", frame->padding[0], frame->padding[1]);
-
-    printf("Payload: ");
-    for (size_t i = 0; i < frame->length; i++) {
-        printf("%02X ", frame->payload[i]);
-    }
-    printf("\n");
-
-    printf("CRC: %08lX\n", frame->crc);
-    // frame_chat(frame);
-    // frame_ping(frame);
-}
-
-void frame_chat(const lownet_frame_t* frame) {
-    char message[frame->length];
-    memcpy(message, frame->payload, frame->length);
-    printf("sent from %02X: ", frame->source);
-    serial_write_line(message);
-}
-
-void frame_ping(const lownet_frame_t* frame) {
-    size_t time_len = sizeof(lownet_time_t);
-    size_t PING_PACKET_SIZE = time_len * 2 + 1;
-
-    // Extract ping packet
-    lownet_time_t timestamp_origin, timestamp_response;
-    memcpy(&timestamp_origin, frame->payload, sizeof(lownet_time_t));
-    memcpy(&timestamp_response, &frame->payload[sizeof(lownet_time_t)], sizeof(lownet_time_t));
-    uint8_t origin = frame->payload[PING_PACKET_SIZE - 1];
-
-    // Log time
-    char msg_out[MSG_BUFFER_LENGTH];
-    snprintf(msg_out, MSG_BUFFER_LENGTH, "Origin %02X time: %ld.%d, Response %02X time: %ld.%d", origin, timestamp_origin.seconds, timestamp_origin.parts, frame->source, timestamp_response.seconds, timestamp_response.parts);
-    serial_write_line(msg_out);
-
-    uint8_t msg_len = frame->length - PING_PACKET_SIZE;
-    uint8_t source = lownet_get_device_id();
-    if (origin == source) {
-        // 1.case: Receiving a pong as response to sent ping
-        if (!msg_len)
-            snprintf(msg_out, MSG_BUFFER_LENGTH, "Ping response from %02X was empty", frame->source);
-        else
-            snprintf(msg_out, MSG_BUFFER_LENGTH, "Ping response from %02X: %.*s", frame->source, msg_len, &frame->payload[PING_PACKET_SIZE]);
-        serial_write_line(msg_out);
-    } else {
-        // 2.case: Receiving a ping and respond with pong
-        const char pong[] = "pong";
-
-        // Check if enough space for pong response
-        if (frame->length + sizeof(pong) > LOWNET_PAYLOAD_SIZE) {
-            serial_write_line("Not enough space in payload for response \"pong\"");
-            return;
-        }
-
-        if (msg_len > 0) {
-            snprintf(msg_out, MSG_BUFFER_LENGTH, "Ping received from %02X: %.*s", frame->source, msg_len, &frame->payload[PING_PACKET_SIZE]);
-            serial_write_line(msg_out);
-        }
-        timestamp_response = lownet_get_time();
-        uint8_t payload[LOWNET_PAYLOAD_SIZE];
-        memcpy(&payload[sizeof(lownet_time_t)], &timestamp_response, sizeof(lownet_time_t));
-        lownet_frame_t frame_response = *frame;
-        frame_response.source = source;
-        frame_response.destination = origin;
-        frame_response.length = frame->length + sizeof(pong);
-        memcpy(frame_response.payload, payload, frame->length);
-        memcpy(&frame_response.payload[frame->length], pong, sizeof(pong));
-        lownet_send(&frame_response);
-    }
-}
+// void dump_frame(const lownet_frame_t* frame) {
+//     printf("Frame Dump:\n");
+//     printf("Magic: %02X %02X\n", frame->magic[0], frame->magic[1]);
+//     printf("Source: %02X\n", frame->source);
+//     printf("Destination: %02X\n", frame->destination);
+//     printf("Protocol: %02X\n", frame->protocol);
+//     printf("Length: %02X\n", frame->length);
+//     printf("Padding: %02X %02X\n", frame->padding[0], frame->padding[1]);
+//
+//     printf("Payload: ");
+//     for (size_t i = 0; i < frame->length; i++) {
+//         printf("%02X ", frame->payload[i]);
+//     }
+//     printf("\n");
+//
+//     printf("CRC: %08lX\n", frame->crc);
+//     // frame_chat(frame);
+//     // frame_ping(frame);
+// }
+//
+// void frame_chat(const lownet_frame_t* frame) {
+//     char message[frame->length];
+//     memcpy(message, frame->payload, frame->length);
+//     printf("sent from %02X: ", frame->source);
+//     serial_write_line(message);
+// }
+//
+// void frame_ping(const lownet_frame_t* frame) {
+//     size_t time_len = sizeof(lownet_time_t);
+//     size_t PING_PACKET_SIZE = time_len * 2 + 1;
+//
+//     // Extract ping packet
+//     lownet_time_t timestamp_origin, timestamp_response;
+//     memcpy(&timestamp_origin, frame->payload, sizeof(lownet_time_t));
+//     memcpy(&timestamp_response, &frame->payload[sizeof(lownet_time_t)], sizeof(lownet_time_t));
+//     uint8_t origin = frame->payload[PING_PACKET_SIZE - 1];
+//
+//     // Log time
+//     char msg_out[MSG_BUFFER_LENGTH];
+//     snprintf(msg_out, MSG_BUFFER_LENGTH, "Origin %02X time: %ld.%d, Response %02X time: %ld.%d", origin, timestamp_origin.seconds, timestamp_origin.parts, frame->source, timestamp_response.seconds, timestamp_response.parts);
+//     serial_write_line(msg_out);
+//
+//     uint8_t msg_len = frame->length - PING_PACKET_SIZE;
+//     uint8_t source = lownet_get_device_id();
+//     if (origin == source) {
+//         // 1.case: Receiving a pong as response to sent ping
+//         if (!msg_len)
+//             snprintf(msg_out, MSG_BUFFER_LENGTH, "Ping response from %02X was empty", frame->source);
+//         else
+//             snprintf(msg_out, MSG_BUFFER_LENGTH, "Ping response from %02X: %.*s", frame->source, msg_len, &frame->payload[PING_PACKET_SIZE]);
+//         serial_write_line(msg_out);
+//     } else {
+//         // 2.case: Receiving a ping and respond with pong
+//         const char pong[] = "pong";
+//
+//         // Check if enough space for pong response
+//         if (frame->length + sizeof(pong) > LOWNET_PAYLOAD_SIZE) {
+//             serial_write_line("Not enough space in payload for response \"pong\"");
+//             return;
+//         }
+//
+//         if (msg_len > 0) {
+//             snprintf(msg_out, MSG_BUFFER_LENGTH, "Ping received from %02X: %.*s", frame->source, msg_len, &frame->payload[PING_PACKET_SIZE]);
+//             serial_write_line(msg_out);
+//         }
+//         timestamp_response = lownet_get_time();
+//         uint8_t payload[LOWNET_PAYLOAD_SIZE];
+//         memcpy(&payload[sizeof(lownet_time_t)], &timestamp_response, sizeof(lownet_time_t));
+//         lownet_frame_t frame_response = *frame;
+//         frame_response.source = source;
+//         frame_response.destination = origin;
+//         frame_response.length = frame->length + sizeof(pong);
+//         memcpy(frame_response.payload, payload, frame->length);
+//         memcpy(&frame_response.payload[frame->length], pong, sizeof(pong));
+//         lownet_send(&frame_response);
+//     }
+// }

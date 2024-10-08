@@ -8,7 +8,6 @@
 
 void serial_write_line(const char* string);
 int serial_read_line(char* buffer);
-void serial_write_prompt();
 
 // Serial rebuild, to Task-based design.
 void init_serial_service();
